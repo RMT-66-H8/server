@@ -246,7 +246,7 @@ ${APP_KNOWLEDGE_BASE.faq.account.map(item => `P: ${item.q}\nJ: ${item.a}`).join(
         try {
             const { content, userId } = req.body
 
-            // Validasi konten pesan wajib diisi
+            // Validasi isi pesan 
             if (!content) {
                 throw { name: "BadRequest", message: "Message content is required" }
             }
