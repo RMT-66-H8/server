@@ -1,0 +1,114 @@
+[
+    {
+        "name": "Obeng Set",
+        "description": "Set obeng 6 in 1 untuk berbagai kebutuhan.",
+        "price": 50000,
+        "stock": 150,
+        "imageUrl": "https://example.com/obeng-set.jpg",
+        "category": "Alat Perkakas"
+    },
+    {
+        "name": "Palu Kecil",
+        "description": "Palu kecil untuk pekerjaan ringan.",
+        "price": 30000,
+        "stock": 100,
+        "imageUrl": "https://example.com/palu-kecil.jpg",
+        "category": "Alat Perkakas"
+    },
+    {
+        "name": "Kain Flanel",
+        "description": "Kain flanel warna-warni untuk kerajinan.",
+        "price": 20000,
+        "stock": 200,
+        "imageUrl": "https://example.com/kain-flanel.jpg",
+        "category": "Pakaian"
+    },
+    {
+        "name": "Kaos Polos",
+        "description": "Kaos polos nyaman untuk sehari-hari.",
+        "price": 75000,
+        "stock": 80,
+        "imageUrl": "https://example.com/kaos-polos.jpg",
+        "category": "Pakaian"
+    },
+    {
+        "name": "Celana Jeans",
+        "description": "Celana jeans berkualitas tinggi.",
+        "price": 150000,
+        "stock": 50,
+        "imageUrl": "https://example.com/celana-jeans.jpg",
+        "category": "Pakaian"
+    },
+    {
+        "name": "Laptop ASUS",
+        "description": "Laptop ASUS dengan spesifikasi tinggi.",
+        "price": 12000000,
+        "stock": 20,
+        "imageUrl": "https://example.com/laptop-asus.jpg",
+        "category": "Teknologi"
+    },
+    {
+        "name": "Smartphone Samsung",
+        "description": "Smartphone Samsung terbaru dengan fitur canggih.",
+        "price": 9000000,
+        "stock": 30,
+        "imageUrl": "https://example.com/smartphone-samsung.jpg",
+        "category": "Teknologi"
+    },
+    {
+        "name": "Headphone JBL",
+        "description": "Headphone JBL dengan suara berkualitas.",
+        "price": 800000,
+        "stock": 40,
+        "imageUrl": "https://example.com/headphone-jbl.jpg",
+        "category": "Teknologi"
+    },
+    {
+        "name": "Kamera DSLR Canon",
+        "description": "Kamera DSLR Canon untuk fotografi profesional.",
+        "price": 12000000,
+        "stock": 15,
+        "imageUrl": "https://example.com/kamera-canon.jpg",
+        "category": "Teknologi"
+    },
+    {
+        "name": "Set Alat Jahit",
+        "description": "Set alat jahit lengkap untuk kerajinan.",
+        "price": 60000,
+        "stock": 100,
+        "imageUrl": "https://example.com/set-alat-jahit.jpg",
+        "category": "Alat Perkakas"
+    },
+    {
+        "name": "Pakaian Dalam Wanita",
+        "description": "Pakaian dalam wanita nyaman dan berkualitas.",
+        "price": 50000,
+        "stock": 120,
+        "imageUrl": "https://example.com/pakaian-dalam-wanita.jpg",
+        "category": "Pakaian"
+    },
+    {
+        "name": "Jam Tangan Casio",
+        "description": "Jam tangan Casio dengan desain klasik.",
+        "price": 300000,
+        "stock": 70,
+        "imageUrl": "https://example.com/jam-tangan-casio.jpg",
+        "category": "Teknologi"
+    },
+    {
+        "name": "Koper Travel",
+        "description": "Koper travel dengan desain stylish.",
+        "price": 400000,
+        "stock": 50,
+        "imageUrl": "https://example.com/koper-travel.jpg",
+        "category": "Alat Perkakas"
+    },
+    {
+        "name": "Sepatu Sneakers",
+        "description": "Sepatu sneakers nyaman untuk aktivitas sehari-hari.",
+        "price": 250000,
+        "stock": 90,
+        "imageUrl": "https://example.com/sepatu-sneakers.jpg",
+        "category": "Pakaian"
+    }
+]

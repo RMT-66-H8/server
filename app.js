@@ -9,6 +9,7 @@ const messageRouter = require('./router/message')
 const { Message, User } = require('./models')
 const MessageController = require('./controllers/MessageController')
 const errorHandler = require('./middlewares/errorHandler')
+const productRouter = require('./router/product')
 
 const app = express()
 const httpServer = createServer(app)
@@ -26,6 +27,7 @@ app.use(cors())
 
 app.use(cartRouter)
 app.use(messageRouter)
+app.use(productRouter)
 
 // Middleware error handler 
 app.use(errorHandler)
