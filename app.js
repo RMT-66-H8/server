@@ -10,6 +10,7 @@ const { Message, User } = require('./models')
 const MessageController = require('./controllers/MessageController')
 const errorHandler = require('./middlewares/errorHandler')
 const productRouter = require('./router/product')
+const authRouter = require("./router/auth")
 
 const app = express()
 const httpServer = createServer(app)
@@ -25,6 +26,7 @@ const port = process.env.PORT || 3000
 app.use(express.json())
 app.use(cors())
 
+app.use('/auth' , authRouter)
 app.use(cartRouter)
 app.use(messageRouter)
 app.use(productRouter)
