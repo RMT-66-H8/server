@@ -31,11 +31,15 @@ app.use(cartRouter)
 app.use(messageRouter)
 app.use(productRouter)
 
+app.use((req, res, next) => {
+    res.status(404).json({ message: 'Route not found' });
+});
+
 // Middleware error handler 
 app.use(errorHandler)
 
 // koneksi Socket.IO
-io.on('connection', (socket) => {
+io.on('connection', (socket) => { //harus di comment saat testing
     console.log('User connected:', socket.id)
 
     // Bergabung ke chat room 
@@ -172,7 +176,11 @@ io.on('connection', (socket) => {
     })
 })
 
-httpServer.listen(port, () => {
-    console.log(`Server running on port ${port}`)
-    console.log(`Socket.IO server ready`)
-})
+if (process.env.NODE_ENV !== 'test') {//harus di comment saat testing
+    httpServer.listen(port, () => {
+        console.log(`Server running on port ${port}`)
+        console.log(`Socket.IO server ready`)
+    })
+} 
+
+module.exports = { app, httpServer, io }

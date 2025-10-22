@@ -27,20 +27,26 @@ class MessageController {
         }
     }
 
-    // Membuat pesan baru dari user
+    // Membuat pesan baru dari user 
     static async createMessage(req, res, next) {
         try {
-            const { senderId, content } = req.body
+            const { content } = req.body
 
-            // Validasi input wajib
-            if (!senderId || !content) {
-                throw { name: "BadRequest", message: "Sender ID and message content are required" }
+
+            const senderId = req.user?.id
+            if (!senderId) {
+                throw { name: 'Unauthorized', message: 'Please login to send messages' }
             }
 
-            // Cek apakah pengirim ada di database
+            // Validasi isi pesan
+            if (!content) {
+                throw { name: 'BadRequest', message: 'Message content is required' }
+            }
+
+            // Cek apakah pengirim ada di database (safety)
             const sender = await User.findByPk(senderId)
             if (!sender) {
-                throw { name: "NotFound", message: "Sender not found" }
+                throw { name: 'NotFound', message: 'Sender not found' }
             }
 
             // Buat pesan baru
@@ -308,7 +314,17 @@ ${APP_KNOWLEDGE_BASE.faq.account.map(item => `P: ${item.q}\nJ: ${item.a}`).join(
             // Cari pesan berdasarkan ID
             const message = await Message.findByPk(id)
             if (!message) {
-                throw { name: "NotFound", message: "Message not found" }
+                throw { name: 'NotFound', message: 'Message not found' }
+            }
+
+            // Hanya sender yang bisa menghapus pesannya
+            const requesterId = req.user?.id
+            if (!requesterId) {
+                throw { name: 'Unauthorized', message: 'Please login' }
+            }
+
+            if (message.senderId !== requesterId) {
+                throw { name: 'Forbidden', message: 'You are not allowed to delete this message' }
             }
 
             // Hapus pesan dari database

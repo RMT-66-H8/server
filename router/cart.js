@@ -1,10 +1,12 @@
 const express = require('express')
 const CartController = require('../controllers/CartController')
+const authentication = require('../middlewares/authentication')
 
 const cartRouter = express.Router()
 
-cartRouter.post('/cart', CartController.addCart)
-cartRouter.get('/cart', CartController.showCart)
-cartRouter.delete('/cart/:id', CartController.removeCart)
+// Semua endpoint cart memerlukan authentication
+cartRouter.post('/cart', authentication, CartController.addCart)
+cartRouter.get('/cart', authentication, CartController.showCart)
+cartRouter.delete('/cart/:id', authentication, CartController.removeCart)
 
 module.exports = cartRouter

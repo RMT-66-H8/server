@@ -20,16 +20,27 @@ class AuthController {
                 };
             }
 
+            const existing = await User.findOne({ where: { email } })
+            if (existing) {
+                throw { name: 'BadRequest', message: 'Email already registered' }
+            }
+
             const newUser = await User.create({
                 name,
                 email,
                 password
             });
 
+            const token = jwt.sign({
+                id: newUser.id,
+                email: newUser.email
+            }, process.env.JWT_SECRET);
+
             res.status(201).json({
                 id: newUser.id,
                 name: newUser.name,
-                email: newUser.email
+                email: newUser.email,
+                token
             });
         } catch (err) {
             next(err);
@@ -75,12 +86,10 @@ class AuthController {
             const token = jwt.sign(payload, process.env.JWT_SECRET);
 
             res.status(200).json({
-                access_token: token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email
-                }
+                token,
+                id: user.id,
+                name: user.name,
+                email: user.email
             });
         } catch (err) {
             next(err);

@@ -5,7 +5,7 @@ class ProductController {
         try {
             const products = await Product.findAll()
 
-            res.status(200).json(products)
+            res.status(200).json({ products })
         } catch (error) {
             next(error)
         }
@@ -15,9 +15,19 @@ class ProductController {
         try {
             const { name, description, price, stock, imageUrl, category } = req.body
 
-            const product = Product.create({ name, description, price, stock, imageUrl, category })
+            const product = await Product.create({ 
+                name, 
+                description, 
+                price, 
+                stock, 
+                imageUrl, 
+                category 
+            })
 
-            res.status(201).json({product})
+            res.status(201).json({
+                message: 'Product created successfully',
+                data: product
+            })
         } catch (error) {
             next(error)
         }
