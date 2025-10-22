@@ -1,5 +1,5 @@
 'use strict';
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs');
 const {
   Model
 } = require('sequelize');
@@ -12,38 +12,47 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      User.hasMany(models.Message, { foreignKey: 'senderId', onDelete: 'CASCADE' })
-      User.hasMany(models.Cart, { foreignKey: 'userId' })
+      User.hasMany(models.Message, { foreignKey: 'senderId' });
+      User.hasMany(models.Cart, { foreignKey: 'userId' });
     }
   }
   User.init({
     name: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: `Name is required` },
+        notNull: { msg: `Name is required` }
+      }
     },
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      unique: { msg: `Email is already registered` },
       validate: {
-        isEmail: true
+        notEmpty: { msg: `Email is required` },
+        notNull: { msg: `Email is required` },
+        isEmail: { msg: `Invalid email format` }
       }
     },
     password: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: `Password is required` },
+        notNull: { msg: `Password is required` }
+      }
     },
     isAI: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false 
+      defaultValue: false
     }
-
   }, {
     sequelize,
     modelName: 'User',
     hooks: {
-      beforeCreate: (user) => {
-        user.password = bcrypt.hashSync(user.password, 10)
+      beforeCreate: async (user) => {
+        user.password = await bcrypt.hash(user.password, 10);
       }
     }
   });
