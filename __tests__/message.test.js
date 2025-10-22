@@ -12,6 +12,7 @@ let userId;
 
 describe('Message Endpoints', () => {
     beforeAll(async () => {
+        await sequelize.sync({ force: true });
         // Bersihkan data sebelum test - hanya hapus messages dan test user
         await Message.destroy({ where: {} });
         await User.destroy({ where: { email: 'test@example.com' } });
