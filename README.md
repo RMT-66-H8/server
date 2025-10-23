@@ -1,38 +1,42 @@
 # E-Commerce Platform with AI Support - Server
 
-Backend server untuk E-Commerce Platform dengan fitur AI Support Assistant menggunakan Socket.IO dan Google Gemini AI.
+Backend server untuk E-Commerce Platform dengan fitur AI Support Assistant, 1-on-1 Private Chat, dan Shopping Cart dengan Checkout menggunakan Socket.IO dan Google Gemini AI.
 
-## Features
+## ✨ Features
 
-- 🔐 User Authentication (Registration & Login)
-- 🛍️ Product Management
-- 🛒 Shopping Cart
-- 💬 Real-time Messaging dengan Socket.IO
-- 🤖 AI Support Assistant dengan Google Gemini
-- 📚 Knowledge Base untuk AI Support
+- 🔐 **User Authentication** - Registration & Login dengan JWT
+- 🛍️ **Product Management** - Browse produk dengan stock management
+- 🛒 **Shopping Cart** - Add/Remove items dengan auto stock control
+- 💳 **Checkout System** - Payment processing dan auto clear cart
+- 💬 **1-on-1 Private Chat** - Real-time private messaging (Socket.IO)
+- 🤖 **AI Support Assistant** - Google Gemini AI dengan knowledge base
+- 👥 **Online Users Tracking** - Real-time user presence
+- ⌨️ **Typing Indicators** - Live typing status
+- 📊 **Test Coverage** - Unit tests dengan Jest
 
-## Tech Stack
+## 🚀 Tech Stack
 
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Database:** PostgreSQL/MySQL (via Sequelize ORM)
-- **Real-time:** Socket.IO
-- **AI:** Google Gemini AI
-- **Authentication:** bcrypt
+- **Runtime:** Node.js v22+
+- **Framework:** Express.js v5
+- **Database:** PostgreSQL (via Sequelize ORM v6)
+- **Real-time:** Socket.IO v4.8
+- **AI:** Google Gemini 2.5 Flash
+- **Authentication:** JWT + bcrypt
+- **Testing:** Jest + Supertest
 
-## Prerequisites
+## 📋 Prerequisites
 
-- Node.js (v14 atau lebih tinggi)
+- Node.js v22+ (recommended)
 - npm atau yarn
-- PostgreSQL atau MySQL database
+- PostgreSQL database
 - Google Gemini API Key
 
-## Installation
+## 🔧 Installation
 
 ### 1. Clone Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/RMT-66-H8/server.git
 cd server
 ```
 
@@ -42,24 +46,31 @@ cd server
 npm install
 ```
 
-### 3. Configure Environment
+### 3. Configure Environment Variables
 
-Copy `.env.example` ke `.env` dan isi dengan konfigurasi Anda:
+Create `.env` file di root directory:
 
-```bash
-cp .env.example .env
-```
-
-Edit `.env`:
 ```env
-# Gemini AI API Key
+# JWT Secret (generate random string)
+JWT_SECRET=your_super_secret_jwt_key_here
+
+# Google Gemini AI API Key
 GEMINI_API_KEY=your_actual_gemini_api_key_here
+
+# Database URL (optional, jika tidak pakai config.json)
+DATABASE_URL=postgresql://username:password@localhost:5432/dbname
+
+# Server Port
+PORT=3000
+
+# Node Environment
+NODE_ENV=development
 ```
 
 **Cara mendapatkan Gemini API Key:**
-1. Kunjungi https://makersuite.google.com/app/apikey
+1. Kunjungi [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Login dengan Google account
-3. Create new API key
+3. Click "Create API Key"
 4. Copy dan paste ke `.env` file
 
 ### 4. Configure Database
@@ -69,155 +80,364 @@ Edit `config/config.json` sesuai dengan database Anda:
 ```json
 {
   "development": {
-    "username": "your_db_username",
-    "password": "your_db_password",
-    "database": "your_db_name",
+    "username": "postgres",
+    "password": "your_password",
+    "database": "ecommerce_db",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "your_password",
+    "database": "ecommerce_test_db",
     "host": "127.0.0.1",
     "dialect": "postgres"
   }
 }
 ```
 
-### 5. Run Migrations
+### 5. Setup Database
 
 ```bash
+# Create database
 npx sequelize-cli db:create
+
+# Run migrations
 npx sequelize-cli db:migrate
-```
 
-Ini akan membuat tables:
-- Users
-- Products
-- Messages
-- Carts
-
-### 6. (Optional) Run Seeders
-
-Jika Anda memiliki seeders untuk data awal:
-
-```bash
+# (Optional) Seed initial data
 npx sequelize-cli db:seed:all
 ```
 
-### 7. Start Server
+**Database Tables Created:**
+- `Users` - User accounts (with authentication)
+- `Products` - Product catalog dengan stock
+- `Messages` - Chat messages (1-on-1 dengan receiverId)
+- `Carts` - Shopping cart items
 
+### 6. Start Server
+
+**Production:**
 ```bash
 npm start
 ```
 
-Atau dengan nodemon untuk development:
-
+**Development (with auto-reload):**
 ```bash
 npm run dev
 ```
 
 Server akan berjalan di `http://localhost:3000`
 
-## API Endpoints
+## 📡 API Endpoints
 
-### Messages
+### Authentication (Public)
+```
+POST   /auth/register     - Register new user
+POST   /auth/login        - Login user (returns JWT token)
+```
 
-- `GET /messages` - Get all messages
-- `GET /messages/quick-help` - Get quick help topics
-- `POST /messages` - Create new message
-- `POST /messages/ai` - Request AI response
-- `DELETE /messages/:id` - Delete message
+### Products
+```
+GET    /products          - Get all products (public)
+POST   /products          - Create product (protected)
+```
 
-### Cart
+### Cart (Protected - Requires JWT)
+```
+GET    /cart              - Get user's cart items
+POST   /cart              - Add product to cart (stock -1)
+POST   /cart/checkout     - Checkout & clear cart
+DELETE /cart/:id          - Remove item from cart (stock +1)
+```
 
-- `GET /cart` - Get cart items
-- `POST /cart` - Add item to cart
-- `DELETE /cart/:id` - Remove item from cart
+### Messages (Protected - Requires JWT)
+```
+GET    /messages                - Get all messages
+POST   /messages                - Create new message
+GET    /messages/quick-help     - Get help topics
+POST   /messages/ai             - Request AI response
+DELETE /messages/:id            - Delete message
+```
 
-## Socket.IO Events
+## 🔌 Socket.IO Events (1-on-1 Private Chat)
 
-### Client → Server
+### Client → Server Events
 
-- `join_room` - Join specific chat room
-- `send_message` - Send message
-- `request_ai` - Request AI support response
-- `typing` - User typing indicator
+| Event | Data | Description |
+|-------|------|-------------|
+| `user:join` | `{ userId, name, email }` | Join with authentication |
+| `chat:join` | `{ userId1, userId2 }` | Join private chat room |
+| `message:send` | `{ senderId, receiverId, content }` | Send private message |
+| `ai:request` | `{ content, userId }` | Request AI assistance |
+| `typing:start` | `{ receiverId }` | Start typing indicator |
+| `typing:stop` | `{ receiverId }` | Stop typing indicator |
+| `users:get` | - | Get online users list |
 
-### Server → Client
+### Server → Client Events
 
-- `receive_message` - Receive new message
-- `ai_typing` - AI typing indicator
-- `user_typing` - User typing indicator
-- `error` - Error notification
+| Event | Data | Description |
+|-------|------|-------------|
+| `user:connected` | `{ userId, name, email }` | Connection confirmed |
+| `users:online` | `[{ userId, name, email }]` | Online users list |
+| `message:sent` | `{ message, roomId }` | Message sent confirmation |
+| `message:received` | `{ message, roomId }` | New message received |
+| `ai:typing` | `{ isTyping }` | AI processing status |
+| `ai:response` | `{ message }` | AI response |
+| `typing:status` | `{ userId, isTyping }` | User typing status |
+| `user:disconnected` | `{ userId, name }` | User went offline |
+| `error` | `{ message }` | Error notification |
 
-Untuk dokumentasi lengkap, lihat [AI_SUPPORT_GUIDE.md](./AI_SUPPORT_GUIDE.md)
+**Private Room Format:** `private_{smallerUserId}_{largerUserId}`  
+Example: User 1 & User 2 → `private_1_2`
 
-## Project Structure
+## 🧪 Testing
+
+### Run All Tests
+```bash
+npm test
+```
+
+### Test Coverage
+```bash
+npm test -- --coverage
+```
+
+### Test Socket.IO Private Chat
+```bash
+npm run test-private-chat
+```
+
+### Test AI Support
+```bash
+npm run test-ai
+```
+
+## 📁 Project Structure
 
 ```
 server/
-├── app.js                      # Main application file
+├── app.js                          # Main app with Socket.IO
+├── package.json
+├── .env                            # Environment variables
+├── .gitignore
+├── API_DOCUMENTATION.md            # Complete API docs
+├── README.md
+│
 ├── config/
-│   ├── config.json            # Database configuration
-│   └── aiKnowledgeBase.js     # AI knowledge base
+│   ├── config.json                 # Database config
+│   └── aiKnowledgeBase.js          # AI training data
+│
 ├── controllers/
-│   ├── CartController.js      # Cart logic
-│   └── MessageController.js   # Message & AI logic
-├── migrations/                # Database migrations
-├── models/                    # Sequelize models
-│   ├── user.js
-│   ├── product.js
-│   ├── message.js
-│   └── cart.js
-├── router/                    # Route definitions
-│   ├── cart.js
-│   └── message.js
-└── package.json
+│   ├── AuthController.js           # Register & Login
+│   ├── CartController.js           # Cart + Checkout
+│   ├── MessageController.js        # Chat + AI Assistant
+│   └── ProductController.js        # Product CRUD
+│
+├── middlewares/
+│   ├── authentication.js           # JWT verification
+│   └── errorHandler.js             # Global error handler
+│
+├── models/
+│   ├── index.js                    # Sequelize init
+│   ├── user.js                     # User model
+│   ├── product.js                  # Product model (with stock)
+│   ├── message.js                  # Message model (with receiverId)
+│   └── cart.js                     # Cart model
+│
+├── migrations/
+│   ├── *-create-user.js
+│   ├── *-create-product.js
+│   ├── *-create-message.js
+│   ├── *-create-cart.js
+│   └── *-add-receiverId-to-messages.js
+│
+├── seeders/
+│   └── *-seed-product.js           # Initial product data
+│
+├── router/
+│   ├── auth.js                     # Auth routes
+│   ├── cart.js                     # Cart routes
+│   ├── message.js                  # Message routes
+│   └── product.js                  # Product routes
+│
+├── __tests__/
+│   ├── auth.test.js
+│   ├── cart.test.js
+│   ├── message.test.js
+│   ├── product.test.js
+│   └── errorHandler.test.js
+│
+└── coverage/                       # Test coverage reports
 ```
 
-## AI Support Knowledge Base
+## 🤖 AI Support Features
 
-AI Support Assistant dilatih dengan informasi tentang:
+### AI Knowledge Base
+AI Support Assistant trained dengan:
+- **Authentication:** Registration, login, password issues
+- **Products:** Browse, search, stock management  
+- **Shopping:** Cart operations, checkout process
+- **Technical:** Website issues, navigation help
+- **FAQs:** Common questions & solutions
 
-- **Account Management:** Registration, login, password reset
-- **Product Browsing:** Search, filter, product details
-- **Shopping Cart:** Add/remove items, checkout process
-- **Technical Support:** Website issues, navigation help
-
-Knowledge base dapat di-customize di `config/aiKnowledgeBase.js`
-
-## Testing AI Support
-
-Test dengan pertanyaan seperti:
-
+### Customizing AI Knowledge
+Edit `config/aiKnowledgeBase.js`:
+```javascript
+module.exports = {
+  appName: "Your App Name",
+  authentication: { /* ... */ },
+  products: { /* ... */ },
+  cart: { /* ... */ },
+  faq: { /* ... */ }
+}
 ```
-"How do I register?"
-"I can't login, what should I do?"
-"How do I add items to my cart?"
-"What if a product is out of stock?"
-"The website is not loading properly"
+
+### Example AI Questions
+```
+✅ "How do I create an account?"
+✅ "I forgot my password"
+✅ "How to add items to cart?"
+✅ "Can I remove items from cart?"
+✅ "What if product is out of stock?"
+✅ "How do I checkout?"
 ```
 
-## Development
+## 🛠️ Available Scripts
 
-### Adding New Features to AI Knowledge Base
+```bash
+npm start                    # Start production server
+npm run dev                  # Start with nodemon (auto-reload)
+npm test                     # Run all tests with coverage
+npm run test-private-chat    # Test Socket.IO private chat
+npm run test-ai              # Test AI assistant
+npm run migrate              # Run database migrations
+npm run migrate:undo         # Undo last migration
+```
 
-1. Edit `config/aiKnowledgeBase.js`
-2. Tambahkan informasi ke `APP_KNOWLEDGE_BASE` object
-3. Update `AI_SYSTEM_PROMPT` jika perlu
-4. Restart server
+## 🔐 Authentication Flow
 
-### Testing Socket.IO
+1. **Register:** `POST /auth/register`
+   - Creates user with hashed password
+   - Returns JWT token
 
-Gunakan tools seperti:
-- [Socket.IO Client Tool](https://amritb.github.io/socketio-client-tool/)
-- Postman (supports WebSocket)
-- Custom React/Vue frontend
+2. **Login:** `POST /auth/login`
+   - Validates credentials
+   - Returns JWT token
 
-## Troubleshooting
+3. **Protected Routes:**
+   - Add `Authorization: Bearer <token>` header
+   - Token verified by `authentication` middleware
+
+## 🛒 Shopping Flow
+
+1. **Browse Products:** `GET /products` (public)
+2. **Add to Cart:** `POST /cart` (stock -1)
+3. **View Cart:** `GET /cart`
+4. **Checkout:** `POST /cart/checkout`
+   - ✅ Validates cart not empty
+   - ✅ Validates stock available
+   - ✅ Calculates total amount
+   - ✅ Clears cart automatically
+   - ✅ Stock remains decreased (purchased)
+
+## 💬 Chat Flow (1-on-1 Private)
+
+1. **Connect:** `socket.io('http://localhost:3000')`
+2. **Authenticate:** `socket.emit('user:join', { userId, name, email })`
+3. **Join Chat:** `socket.emit('chat:join', { userId1, userId2 })`
+4. **Send Message:** `socket.emit('message:send', { senderId, receiverId, content })`
+5. **Receive:** `socket.on('message:received', (data) => {})`
+
+**Key Points:**
+- ✅ Only 1-on-1 private messaging
+- ✅ No group chat / broadcast
+- ✅ Messages saved with `receiverId`
+- ✅ Real-time delivery if user online
+- ✅ Typing indicators supported
+
+## 🐛 Troubleshooting
 
 ### Port already in use
-```bash
-# Windows
+**Windows:**
+```powershell
 netstat -ano | findstr :3000
 taskkill /PID <PID> /F
+```
 
-# Linux/Mac
+**Linux/Mac:**
+```bash
+lsof -ti:3000 | xargs kill -9
+```
+
+### Database connection failed
+```bash
+# Check PostgreSQL is running
+# Windows: services.msc → PostgreSQL
+# Linux: sudo systemctl status postgresql
+# Mac: brew services list
+
+# Verify config/config.json credentials
+# Test connection: psql -U username -d database_name
+```
+
+### Socket.IO connection failed
+- ✅ Check CORS settings in `app.js`
+- ✅ Verify client uses correct URL
+- ✅ Check firewall/network settings
+- ✅ Use `transports: ['websocket']` if polling fails
+
+### JWT token invalid
+- ✅ Check `JWT_SECRET` in `.env`
+- ✅ Verify token format: `Bearer <token>`
+- ✅ Token expires after configured time
+- ✅ Generate new token via login
+
+### Migration errors
+```bash
+# Reset database (WARNING: deletes all data)
+npx sequelize-cli db:drop
+npx sequelize-cli db:create
+npx sequelize-cli db:migrate
+npx sequelize-cli db:seed:all
+```
+
+## 📚 Documentation
+
+- **API Documentation:** [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
+- **Test Coverage:** Open `coverage/lcov-report/index.html` in browser
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch: `git checkout -b feat/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feat/amazing-feature`
+5. Create Pull Request to `dev` branch
+
+## 📝 License
+
+ISC
+
+## 👥 Team
+
+**RMT-66-H8** - Hacktiv8 Batch 66
+
+## 🔗 Links
+
+- **Repository:** [github.com/RMT-66-H8/server](https://github.com/RMT-66-H8/server)
+- **Issues:** [github.com/RMT-66-H8/server/issues](https://github.com/RMT-66-H8/server/issues)
+
+---
+
+**Last Updated:** October 23, 2025  
+**Version:** 1.0.0  
+**Node.js:** v22.17.0  
+**Socket.IO:** v4.8.1  
+**Sequelize:** v6.37.7  
+
+Made with ❤️ by RMT-66-H8
+```
 lsof -ti:3000 | xargs kill -9
 ```
 
