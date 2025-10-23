@@ -120,6 +120,72 @@ class CartController {
             next(error)
         }
     }
+
+    // Checkout - Clear cart setelah payment berhasil
+    static async checkout(req, res, next) {
+        try {
+            const userId = req.user.id
+
+            // Ambil semua item di cart user
+            const carts = await Cart.findAll({
+                where: { userId },
+                include: [
+                    {
+                        model: Product,
+                        attributes: ['id', 'name', 'price', 'stock']
+                    }
+                ]
+            })
+
+            // Validasi cart tidak kosong
+            if (carts.length === 0) {
+                throw { name: "BadRequest", message: "Your cart is empty. Add products before checkout." }
+            }
+
+            // Validasi stok semua produk masih tersedia
+            for (const cart of carts) {
+                if (!cart.Product) {
+                    throw { name: "NotFound", message: "Product not found in cart" }
+                }
+                if (cart.Product.stock < 0) {
+                    throw { name: "BadRequest", message: `Product "${cart.Product.name}" is out of stock` }
+                }
+            }
+
+            // Hitung total amount
+            const totalAmount = carts.reduce((sum, cart) => {
+                return sum + parseFloat(cart.Product.price)
+            }, 0)
+
+            // Siapkan order summary
+            const orderItems = carts.map(cart => ({
+                productId: cart.Product.id,
+                productName: cart.Product.name,
+                price: cart.Product.price,
+                quantity: 1
+            }))
+
+            // Hapus semua item dari cart (payment berhasil)
+            await Cart.destroy({
+                where: { userId }
+            })
+
+            res.status(200).json({ 
+                message: 'Checkout successful! Your order has been placed.',
+                orderSummary: {
+                    userId,
+                    items: orderItems,
+                    totalItems: orderItems.length,
+                    totalAmount: totalAmount.toFixed(2),
+                    orderDate: new Date(),
+                    status: 'completed'
+                }
+            })
+        } catch (error) {
+            console.log(error)
+            next(error)
+        }
+    }
 }
 
 module.exports = CartController

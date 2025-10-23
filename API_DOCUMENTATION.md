@@ -376,11 +376,84 @@ Authorization: Bearer <token>
 
 ---
 
+### 8. Checkout Cart
+Process payment and clear cart after successful checkout.
+
+**Endpoint:** `POST /cart/checkout`
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "message": "Checkout successful! Your order has been placed.",
+  "orderSummary": {
+    "userId": 1,
+    "items": [
+      {
+        "productId": 1,
+        "productName": "Laptop Gaming",
+        "price": 25000000,
+        "quantity": 1
+      },
+      {
+        "productId": 2,
+        "productName": "Wireless Mouse",
+        "price": 350000,
+        "quantity": 1
+      }
+    ],
+    "totalItems": 2,
+    "totalAmount": "25350000.00",
+    "orderDate": "2025-10-23T12:30:00.000Z",
+    "status": "completed"
+  }
+}
+```
+
+**Important Notes:**
+- **Cart is automatically cleared** after successful checkout
+- **Product stock is NOT restored** (items are purchased)
+- Stock was already decremented when items were added to cart
+- All cart items are validated before checkout
+- Returns complete order summary
+
+**Error Responses:**
+- `401 Unauthorized` - Missing or invalid token
+```json
+{
+  "message": "Unauthorized access"
+}
+```
+- `400 Bad Request` - Empty cart
+```json
+{
+  "message": "Your cart is empty. Add products before checkout."
+}
+```
+- `400 Bad Request` - Product out of stock
+```json
+{
+  "message": "Product \"Laptop Gaming\" is out of stock"
+}
+```
+- `404 Not Found` - Product not found
+```json
+{
+  "message": "Product not found in cart"
+}
+```
+
+---
+
 ## Message Endpoints
 
 All message endpoints require authentication.
 
-### 8. Get All Messages
+### 9. Get All Messages
 Retrieves all messages from the conversation history.
 
 **Endpoint:** `GET /messages`
@@ -434,7 +507,7 @@ Authorization: Bearer <token>
 
 ---
 
-### 9. Create Message
+### 10. Create Message
 Sends a new message from the authenticated user.
 
 **Endpoint:** `POST /messages`
@@ -488,7 +561,7 @@ Authorization: Bearer <token>
 
 ---
 
-### 10. Request AI Response
+### 11. Request AI Response
 Generates an AI-powered response to a user's question using Google Gemini API.
 
 **Endpoint:** `POST /messages/ai`
@@ -550,7 +623,7 @@ Authorization: Bearer <token>
 
 ---
 
-### 11. Get Quick Help Topics
+### 12. Get Quick Help Topics
 Retrieves categorized list of common help topics for quick assistance.
 
 **Endpoint:** `GET /messages/quick-help`
@@ -620,7 +693,7 @@ Authorization: Bearer <token>
 
 ---
 
-### 12. Delete Message
+### 13. Delete Message
 Deletes a message. Only the sender can delete their own messages.
 
 **Endpoint:** `DELETE /messages/:id`
@@ -757,6 +830,7 @@ The following endpoints require authentication:
 **Cart:**
 - `POST /cart` - Add to cart
 - `GET /cart` - View cart
+- `POST /cart/checkout` - Checkout and clear cart
 - `DELETE /cart/:id` - Remove from cart
 
 **Messages:**
@@ -887,9 +961,120 @@ Currently, no rate limiting is implemented. Consider adding rate limiting for pr
 - Registration/Login endpoints
 - AI response generation endpoint
 
-### WebSocket Support
+### WebSocket Support - 1-on-1 Private Chat
 
-For real-time message updates, consider implementing Socket.IO integration. The current implementation uses REST endpoints.
+The application uses **Socket.IO** for real-time 1-on-1 private messaging between users.
+
+**Connection URL:** `ws://localhost:3000` or `http://localhost:3000`
+
+#### Socket Events Reference
+
+**Client → Server Events:**
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `user:join` | `{ userId, name, email }` | Authenticate and join Socket.IO |
+| `chat:join` | `{ userId1, userId2 }` | Join private chat room with another user |
+| `chat:leave` | `{ roomId }` | Leave a private chat room |
+| `message:send` | `{ senderId, receiverId, content }` | Send 1-on-1 private message |
+| `ai:request` | `{ content, userId }` | Request AI assistant (private) |
+| `typing:start` | `{ receiverId }` | Notify other user you're typing |
+| `typing:stop` | `{ receiverId }` | Stop typing notification |
+| `users:get` | - | Request online users list |
+
+**Server → Client Events:**
+
+| Event | Data | Description |
+|-------|------|-------------|
+| `user:connected` | `{ userId, name, email }` | Confirmation of connection |
+| `users:online` | `[{ userId, name, email }]` | List of online users |
+| `chat:joined` | `{ roomId }` | Confirmation of joining chat room |
+| `message:sent` | `{ message, roomId }` | Confirmation message was sent |
+| `message:received` | `{ message, roomId }` | Receive new private message |
+| `ai:typing` | `{ isTyping }` | AI is processing response |
+| `ai:response` | `{ message }` | AI response message |
+| `typing:status` | `{ userId, isTyping }` | Other user typing status |
+| `user:disconnected` | `{ userId, name }` | User went offline |
+| `error` | `{ message }` | Error notification |
+
+#### Socket.IO Usage Example
+
+```javascript
+import io from 'socket.io-client';
+
+// Connect to server
+const socket = io('http://localhost:3000');
+
+// Join as authenticated user
+socket.emit('user:join', {
+  userId: 1,
+  name: 'John Doe',
+  email: 'john@example.com'
+});
+
+// Listen for connection confirmation
+socket.on('user:connected', (data) => {
+  console.log('Connected:', data);
+});
+
+// Join private chat with user ID 2
+socket.emit('chat:join', {
+  userId1: 1,
+  userId2: 2
+});
+
+// Send private message
+socket.emit('message:send', {
+  senderId: 1,
+  receiverId: 2,
+  content: 'Hello!'
+});
+
+// Receive messages
+socket.on('message:received', (messageData) => {
+  console.log('New message:', messageData);
+});
+
+// Typing indicators
+socket.emit('typing:start', { receiverId: 2 });
+socket.on('typing:status', ({ userId, isTyping }) => {
+  console.log(`User ${userId} is typing: ${isTyping}`);
+});
+
+// Request AI assistance
+socket.emit('ai:request', {
+  content: 'How do I add items to cart?',
+  userId: 1
+});
+
+socket.on('ai:response', (aiMessage) => {
+  console.log('AI says:', aiMessage.content);
+});
+
+// Listen for online users
+socket.on('users:online', (users) => {
+  console.log('Online users:', users);
+});
+```
+
+#### Private Chat Room ID Format
+
+Private chat rooms use consistent IDs regardless of who initiates:
+```
+private_{smallerUserId}_{largerUserId}
+
+Examples:
+- User 1 & User 2: "private_1_2"
+- User 5 & User 3: "private_3_5"
+```
+
+#### Important Notes
+
+- **No Group Chat:** Only 1-on-1 private messaging is supported
+- **No Broadcast:** All messages are private between two users
+- **Persistent Messages:** All messages saved to database with `receiverId`
+- **AI is Private:** AI responses are only sent to the requesting user
+- **Auto Reconnect:** Users who reconnect with same `userId` replace old session
 
 ### Testing
 

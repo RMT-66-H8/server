@@ -3,7 +3,6 @@ const express = require('express')
 const cors = require('cors')
 const { createServer } = require('http')
 const { Server } = require('socket.io')
-const { Op } = require('sequelize')
 const cartRouter = require('./router/cart')
 const messageRouter = require('./router/message')
 const { Message, User } = require('./models')
@@ -32,7 +31,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/auth' , authRouter)
+app.use('/auth', authRouter)
 app.use(cartRouter)
 app.use(messageRouter)
 app.use(productRouter)
@@ -44,73 +43,89 @@ app.use((req, res, next) => {
 // Middleware error handler 
 app.use(errorHandler)
 
-// Track online users
-const onlineUsers = new Map(); // Map<socketId, { userId, name, email }>
+// Track online users: Map<userId, { socketId, name, email }>
+const onlineUsers = new Map();
 
-// koneksi Socket.IO
+// Helper function to generate private room ID for 1-on-1 chat
+function getPrivateRoomId(userId1, userId2) {
+    const sortedIds = [userId1, userId2].sort((a, b) => a - b);
+    return `private_${sortedIds[0]}_${sortedIds[1]}`;
+}
+
 io.on('connection', (socket) => { //harus di comment saat testing
-    console.log('User connected:', socket.id)
+    console.log('🔌 Socket connected:', socket.id)
 
-    // User joins with their ID
+    // User joins with authentication
     socket.on('user:join', (userData) => {
         const { userId, name, email } = userData;
         if (userId && name && email) {
-            onlineUsers.set(socket.id, { userId, name, email });
-            console.log(`👤 User joined: ${name} (${email})`);
+            // Replace old session if user reconnects
+            if (onlineUsers.has(userId)) {
+                const oldSocketId = onlineUsers.get(userId).socketId;
+                console.log(`⚠️  User ${name} reconnected. Old socket: ${oldSocketId}`);
+            }
+            
+            onlineUsers.set(userId, { socketId: socket.id, name, email });
+            socket.userId = userId;
+            
+            console.log(`👤 User joined: ${name} (ID: ${userId})`);
             console.log(`📊 Online users: ${onlineUsers.size}`);
             
-            // Broadcast updated online users list to all clients
-            const usersList = Array.from(onlineUsers.values());
+            // Broadcast online users list
+            const usersList = Array.from(onlineUsers.entries()).map(([id, data]) => ({
+                userId: id,
+                name: data.name,
+                email: data.email
+            }));
             io.emit('users:online', usersList);
+            
+            socket.emit('user:connected', { userId, name, email });
         }
     });
 
-    // User disconnects
-    socket.on('disconnect', () => {
-        const user = onlineUsers.get(socket.id);
-        if (user) {
-            console.log(`👋 User left: ${user.name} (${user.email})`);
-            onlineUsers.delete(socket.id);
-            console.log(`📊 Online users: ${onlineUsers.size}`);
-            
-            // Broadcast updated online users list
-            const usersList = Array.from(onlineUsers.values());
-            io.emit('users:online', usersList);
-        } else {
-            console.log('User disconnected:', socket.id);
-        }
+    // Join private 1-on-1 chat room
+    socket.on('chat:join', ({ userId1, userId2 }) => {
+        const roomId = getPrivateRoomId(userId1, userId2);
+        socket.join(roomId);
+        console.log(`💬 User ${socket.userId} joined private room: ${roomId}`);
+        socket.emit('chat:joined', { roomId });
     });
 
-    // Bergabung ke chat room 
-    socket.on('join_room', (roomId) => {
-        socket.join(roomId)
-        console.log(`User ${socket.id} joined room ${roomId}`)
-    })
+    // Leave chat room
+    socket.on('chat:leave', ({ roomId }) => {
+        socket.leave(roomId);
+        console.log(`🚪 User ${socket.userId} left room: ${roomId}`);
+    });
 
-    socket.on('send_message', async (data) => {
+    // Send private message (1-on-1 ONLY)
+    socket.on('message:send', async (data) => {
         try {
-            const { senderId, content, roomId } = data
+            const { senderId, receiverId, content } = data;
 
-            // Valid Data
-            if (!senderId || !content) {
-                socket.emit('error', { message: 'Sender ID and content are required' })
-                return
+            if (!senderId || !receiverId || !content) {
+                socket.emit('error', { message: 'Sender ID, receiver ID, and content are required' });
+                return;
             }
 
-            // Cek apakah pengirim ada
-            const sender = await User.findByPk(senderId)
+            const sender = await User.findByPk(senderId);
             if (!sender) {
-                socket.emit('error', { message: 'Sender not found' })
-                return
+                socket.emit('error', { message: 'Sender not found' });
+                return;
             }
 
-            // Simpan pesan 
+            const receiver = await User.findByPk(receiverId);
+            if (!receiver) {
+                socket.emit('error', { message: 'Receiver not found' });
+                return;
+            }
+
+            // Save message to database with receiverId
             const message = await Message.create({
                 senderId,
+                receiverId,
                 content
-            })
+            });
 
-            // Ambil data lengkap pesan  user
             const completeMessage = await Message.findByPk(message.id, {
                 include: [
                     {
@@ -118,44 +133,51 @@ io.on('connection', (socket) => { //harus di comment saat testing
                         attributes: ['id', 'name', 'email', 'isAI']
                     }
                 ]
-            })
+            });
 
-            // Broadcast pesan ke semua client yang terhubung (atau ke room tertentu)
-            if (roomId) {
-                io.to(roomId).emit('receive_message', completeMessage)
-            } else {
-                io.emit('receive_message', completeMessage)
+            const roomId = getPrivateRoomId(senderId, receiverId);
+            const messageData = {
+                ...completeMessage.toJSON(),
+                receiverId,
+                roomId
+            };
+
+            // Send to sender (confirmation)
+            socket.emit('message:sent', messageData);
+
+            // Send to receiver if online
+            const receiverData = onlineUsers.get(receiverId);
+            if (receiverData) {
+                io.to(receiverData.socketId).emit('message:received', messageData);
             }
 
-            console.log('Message sent:', completeMessage.content)
+            console.log(`📨 ${sender.name} → ${receiver.name}: ${content.substring(0, 30)}...`);
         } catch (error) {
-            console.log(error)
-            socket.emit('error', { message: 'Failed to send message', error: error.message })
+            console.log(error);
+            socket.emit('error', { message: 'Failed to send message', error: error.message });
         }
-    })
+    });
 
-    // Menangani permintaan pesan AI
-    socket.on('request_ai', async (data) => {
+    // Request AI assistance (private only)
+    socket.on('ai:request', async (data) => {
         try {
-            const { content, userId } = data
+            const { content, userId } = data;
 
             if (!content) {
-                socket.emit('error', { message: 'Message content is required' })
-                return
+                socket.emit('error', { message: 'Message content is required' });
+                return;
             }
 
-            // Kirim indikator kalo mengetik
-            io.emit('ai_typing', { isTyping: true })
+            socket.emit('ai:typing', { isTyping: true });
 
-            // Hitung waktu 24 jam 
-            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-
-            // Ambil riwayat percakapan 24 jam terakhir
+            // Get conversation history (user's private messages with AI)
+            const aiUser = await MessageController.getOrCreateAIUser();
             const conversationHistory = await Message.findAll({
                 where: {
-                    createdAt: {
-                        [Op.gte]: twentyFourHoursAgo
-                    }
+                    [Op.or]: [
+                        { senderId: userId, receiverId: aiUser.id },
+                        { senderId: aiUser.id, receiverId: userId }
+                    ]
                 },
                 include: [
                     {
@@ -163,25 +185,23 @@ io.on('connection', (socket) => { //harus di comment saat testing
                         attributes: ['id', 'name', 'isAI']
                     }
                 ],
-                order: [['createdAt', 'ASC']]
-            })
+                order: [['createdAt', 'ASC']],
+                limit: 10
+            });
 
-            // Generate respons AI
+            // Generate AI response
             const aiResponse = await MessageController.generateAIResponse(
                 content,
                 conversationHistory
-            )
+            );
 
-            // Ambil atau buat AI per user
-            const aiUser = await MessageController.getOrCreateAIUser()
-
-            // Simpan respons AI ke database
+            // Save AI message with receiverId
             const aiMessage = await Message.create({
                 senderId: aiUser.id,
+                receiverId: userId,
                 content: aiResponse
-            })
+            });
 
-            // Ambil data lengkap pesan AI dengan informasi user
             const completeAIMessage = await Message.findByPk(aiMessage.id, {
                 include: [
                     {
@@ -189,36 +209,77 @@ io.on('connection', (socket) => { //harus di comment saat testing
                         attributes: ['id', 'name', 'email', 'isAI']
                     }
                 ]
-            })
+            });
 
-            // Hentikan indikator sedang mengetik
-            io.emit('ai_typing', { isTyping: false })
+            socket.emit('ai:typing', { isTyping: false });
+            socket.emit('ai:response', completeAIMessage);
 
-            // Broadcast respons AI ke semua client
-            io.emit('receive_message', completeAIMessage)
-
-            console.log('AI response sent:', completeAIMessage.content)
+            console.log(`🤖 AI → User ${userId}: ${aiResponse.substring(0, 30)}...`);
         } catch (error) {
-            console.log(error)
-            io.emit('ai_typing', { isTyping: false })
-            socket.emit('error', { message: 'Failed to generate AI response', error: error.message })
+            console.log(error);
+            socket.emit('ai:typing', { isTyping: false });
+            socket.emit('error', { message: 'Failed to generate AI response', error: error.message });
         }
-    })
+    });
 
-    //indikator user mengetik
-    socket.on('typing', (data) => {
-        socket.broadcast.emit('user_typing', data)
-    })
+    // Typing indicator (1-on-1)
+    socket.on('typing:start', ({ receiverId }) => {
+        const receiverData = onlineUsers.get(receiverId);
+        if (receiverData) {
+            io.to(receiverData.socketId).emit('typing:status', {
+                userId: socket.userId,
+                isTyping: true
+            });
+        }
+    });
 
+    socket.on('typing:stop', ({ receiverId }) => {
+        const receiverData = onlineUsers.get(receiverId);
+        if (receiverData) {
+            io.to(receiverData.socketId).emit('typing:status', {
+                userId: socket.userId,
+                isTyping: false
+            });
+        }
+    });
+
+    // Get online users
+    socket.on('users:get', () => {
+        const usersList = Array.from(onlineUsers.entries()).map(([id, data]) => ({
+            userId: id,
+            name: data.name,
+            email: data.email
+        }));
+        socket.emit('users:online', usersList);
+    });
+
+    // Disconnect
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id)
-    })
+        if (socket.userId) {
+            const userData = onlineUsers.get(socket.userId);
+            if (userData) {
+                console.log(`👋 User disconnected: ${userData.name} (ID: ${socket.userId})`);
+                onlineUsers.delete(socket.userId);
+                console.log(`📊 Online users: ${onlineUsers.size}`);
+                
+                const usersList = Array.from(onlineUsers.entries()).map(([id, data]) => ({
+                    userId: id,
+                    name: data.name,
+                    email: data.email
+                }));
+                io.emit('users:online', usersList);
+                io.emit('user:disconnected', { userId: socket.userId, name: userData.name });
+            }
+        } else {
+            console.log('🔌 Socket disconnected:', socket.id);
+        }
+    });
 })
 
 if (process.env.NODE_ENV !== 'test') {//harus di comment saat testing
     httpServer.listen(port, () => {
         console.log(`Server running on port ${port}`)
-        console.log(`Socket.IO server ready`)
+        console.log(`Socket.IO server ready - 1-on-1 Private Chat Only`)
     })
 } 
 
