@@ -65,6 +65,12 @@ class MessageController {
                 ]
             })
 
+            // Emit socket event to broadcast new message to all connected clients
+            if (req.io) {
+                req.io.emit('message:new', completeMessage);
+                console.log('📤 Broadcasting new message via socket:', completeMessage.id);
+            }
+
             res.status(201).json({ 
                 message: 'Message created successfully', 
                 data: completeMessage 
@@ -296,6 +302,12 @@ ${APP_KNOWLEDGE_BASE.faq.account.map(item => `P: ${item.q}\nJ: ${item.a}`).join(
                 ]
             })
 
+            // Emit socket event for AI response
+            if (req.io) {
+                req.io.emit('message:new', completeAIMessage);
+                console.log('📤 Broadcasting AI message via socket:', completeAIMessage.id);
+            }
+
             res.status(201).json({ 
                 message: 'AI response generated successfully', 
                 data: completeAIMessage 
@@ -329,6 +341,12 @@ ${APP_KNOWLEDGE_BASE.faq.account.map(item => `P: ${item.q}\nJ: ${item.a}`).join(
 
             // Hapus pesan dari database
             await message.destroy()
+
+            // Emit socket event for deleted message
+            if (req.io) {
+                req.io.emit('message:deleted', id);
+                console.log('📤 Broadcasting message deletion via socket:', id);
+            }
 
             res.status(200).json({ message: 'Message deleted successfully' })
         } catch (error) {

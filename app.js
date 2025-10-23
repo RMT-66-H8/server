@@ -26,6 +26,12 @@ const port = process.env.PORT || 3000
 app.use(express.json())
 app.use(cors())
 
+// Make io accessible to req object
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
 app.use('/auth' , authRouter)
 app.use(cartRouter)
 app.use(messageRouter)
@@ -38,9 +44,42 @@ app.use((req, res, next) => {
 // Middleware error handler 
 app.use(errorHandler)
 
+// Track online users
+const onlineUsers = new Map(); // Map<socketId, { userId, name, email }>
+
 // koneksi Socket.IO
 io.on('connection', (socket) => { //harus di comment saat testing
     console.log('User connected:', socket.id)
+
+    // User joins with their ID
+    socket.on('user:join', (userData) => {
+        const { userId, name, email } = userData;
+        if (userId && name && email) {
+            onlineUsers.set(socket.id, { userId, name, email });
+            console.log(`👤 User joined: ${name} (${email})`);
+            console.log(`📊 Online users: ${onlineUsers.size}`);
+            
+            // Broadcast updated online users list to all clients
+            const usersList = Array.from(onlineUsers.values());
+            io.emit('users:online', usersList);
+        }
+    });
+
+    // User disconnects
+    socket.on('disconnect', () => {
+        const user = onlineUsers.get(socket.id);
+        if (user) {
+            console.log(`👋 User left: ${user.name} (${user.email})`);
+            onlineUsers.delete(socket.id);
+            console.log(`📊 Online users: ${onlineUsers.size}`);
+            
+            // Broadcast updated online users list
+            const usersList = Array.from(onlineUsers.values());
+            io.emit('users:online', usersList);
+        } else {
+            console.log('User disconnected:', socket.id);
+        }
+    });
 
     // Bergabung ke chat room 
     socket.on('join_room', (roomId) => {

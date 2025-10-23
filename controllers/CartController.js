@@ -37,7 +37,10 @@ class CartController {
                 productId
             })
 
-            // Ambil data lengkap keranjang dengan detail produk
+            // Kurangi stock product sebanyak 1
+            await product.decrement('stock', { by: 1 })
+
+            // Ambil data lengkap keranjang dengan detail produk (dengan stock yang sudah dikurangi)
             const completeCart = await Cart.findByPk(cart.id, {
                 include: [
                     {
@@ -99,8 +102,17 @@ class CartController {
                 throw { name: "NotFound", message: "Cart item not found" }
             }
 
+            // Ambil productId sebelum hapus (untuk kembalikan stock)
+            const productId = cart.productId
+
             // Hapus item dari keranjang
             await cart.destroy()
+
+            // Kembalikan stock product sebanyak 1
+            await Product.increment('stock', { 
+                by: 1, 
+                where: { id: productId } 
+            })
 
             res.status(200).json({ message: 'Product removed from cart successfully' })
         } catch (error) {

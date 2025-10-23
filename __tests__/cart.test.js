@@ -106,6 +106,33 @@ describe('Cart Endpoints', () => {
             expect(response.body).toHaveProperty('message');
         });
 
+        test('Should decrease product stock when added to cart', async () => {
+            // Create new product with stock 10
+            const testProduct = await Product.create({
+                name: 'Stock Test Product',
+                description: 'Test stock decrease',
+                price: 25000,
+                stock: 10,
+                imageUrl: 'https://example.com/stock-test.jpg',
+                category: 'Test'
+            });
+
+            const initialStock = testProduct.stock;
+
+            // Add to cart
+            await request(app)
+                .post('/cart')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    productId: testProduct.id
+                })
+                .expect(201);
+
+            // Check if stock decreased
+            const updatedProduct = await Product.findByPk(testProduct.id);
+            expect(updatedProduct.stock).toBe(initialStock - 1);
+        });
+
         test('Should fail when product is out of stock', async () => {
             // Create product with no stock
             const outOfStockProduct = await Product.create({
@@ -161,19 +188,75 @@ describe('Cart Endpoints', () => {
 
     describe('DELETE /cart/:id', () => {
         let cartId;
+        let testProductForRemove;
 
         beforeAll(async () => {
+            // Create new product for remove test
+            testProductForRemove = await Product.create({
+                name: 'Remove Test Product',
+                description: 'Test stock increase on remove',
+                price: 30000,
+                stock: 5,
+                imageUrl: 'https://example.com/remove-test.jpg',
+                category: 'Test'
+            });
+
+            // Add to cart first
+            const addResponse = await request(app)
+                .post('/cart')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    productId: testProductForRemove.id
+                });
+
             // Get cart item id
             const response = await request(app)
                 .get('/cart')
                 .set('Authorization', `Bearer ${authToken}`);
 
-            cartId = response.body.carts[0].id;
+            const cartItem = response.body.carts.find(c => c.productId === testProductForRemove.id);
+            cartId = cartItem.id;
+        });
+
+        test('Should increase product stock when removed from cart', async () => {
+            // Get stock before remove
+            const productBefore = await Product.findByPk(testProductForRemove.id);
+            const stockBefore = productBefore.stock;
+
+            // Remove from cart
+            await request(app)
+                .delete(`/cart/${cartId}`)
+                .set('Authorization', `Bearer ${authToken}`)
+                .expect(200);
+
+            // Check if stock increased
+            const productAfter = await Product.findByPk(testProductForRemove.id);
+            expect(productAfter.stock).toBe(stockBefore + 1);
         });
 
         test('Should remove item from cart with authentication', async () => {
+            // Create another cart item for this test
+            const anotherProduct = await Product.create({
+                name: 'Another Test Product',
+                price: 15000,
+                stock: 3
+            });
+
+            const addResponse = await request(app)
+                .post('/cart')
+                .set('Authorization', `Bearer ${authToken}`)
+                .send({
+                    productId: anotherProduct.id
+                });
+
+            const cartResponse = await request(app)
+                .get('/cart')
+                .set('Authorization', `Bearer ${authToken}`);
+
+            const newCartItem = cartResponse.body.carts.find(c => c.productId === anotherProduct.id);
+
             const response = await request(app)
-                .delete(`/cart/${cartId}`)
+                .delete(`/cart/${newCartItem.id}`)
                 .set('Authorization', `Bearer ${authToken}`)
                 .expect(200);
 

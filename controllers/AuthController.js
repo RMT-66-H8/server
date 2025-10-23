@@ -95,6 +95,21 @@ class AuthController {
             next(err);
         }
     }
+
+    static async getAllUsers(req, res, next) {
+        try {
+            const users = await User.findAll({
+                attributes: ['id', 'name', 'email'],
+                order: [['name', 'ASC']]
+            });
+
+            res.status(200).json({
+                users
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
 }
 
 module.exports = AuthController;
