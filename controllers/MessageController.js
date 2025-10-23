@@ -30,7 +30,7 @@ class MessageController {
     // Membuat pesan baru dari user 
     static async createMessage(req, res, next) {
         try {
-            const { content } = req.body
+            const { content, receiverId } = req.body
 
 
             const senderId = req.user?.id
@@ -49,9 +49,18 @@ class MessageController {
                 throw { name: 'NotFound', message: 'Sender not found' }
             }
 
-            // Buat pesan baru
+            // Jika ada receiverId, validate receiver exists
+            if (receiverId) {
+                const receiver = await User.findByPk(receiverId)
+                if (!receiver) {
+                    throw { name: 'NotFound', message: 'Receiver not found' }
+                }
+            }
+
+            // Buat pesan baru (receiverId bisa null untuk broadcast)
             const message = await Message.create({
                 senderId,
+                receiverId: receiverId || null,  // null = broadcast to all
                 content
             })
 

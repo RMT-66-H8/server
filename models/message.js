@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Message.belongsTo(models.User, { foreignKey: 'senderId' });
+      Message.belongsTo(models.User, { foreignKey: 'receiverId', as: 'Receiver' });
     }
   }
   Message.init({
@@ -24,6 +25,10 @@ module.exports = (sequelize, DataTypes) => {
     senderId: {
       type: DataTypes.INTEGER,
       allowNull: false
+    },
+    receiverId: {
+      type: DataTypes.INTEGER,
+      allowNull: true  // null = broadcast message (grup chat)
     },
     content: {
       type: DataTypes.TEXT,
