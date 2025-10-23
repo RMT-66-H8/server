@@ -4,7 +4,7 @@
         "description": "Set obeng 6 in 1 untuk berbagai kebutuhan.",
         "price": 50000,
         "stock": 150,
-        "imageUrl": "https://example.com/obeng-set.jpg",
+        "imageUrl": "https://picsum.photos/seed/obeng/400/400",
         "category": "Alat Perkakas"
     },
     {
@@ -12,7 +12,7 @@
         "description": "Palu kecil untuk pekerjaan ringan.",
         "price": 30000,
         "stock": 100,
-        "imageUrl": "https://example.com/palu-kecil.jpg",
+        "imageUrl": "https://picsum.photos/seed/palu/400/400",
         "category": "Alat Perkakas"
     },
     {
@@ -20,7 +20,7 @@
         "description": "Kain flanel warna-warni untuk kerajinan.",
         "price": 20000,
         "stock": 200,
-        "imageUrl": "https://example.com/kain-flanel.jpg",
+        "imageUrl": "https://picsum.photos/seed/flanel/400/400",
         "category": "Pakaian"
     },
     {
@@ -28,7 +28,7 @@
         "description": "Kaos polos nyaman untuk sehari-hari.",
         "price": 75000,
         "stock": 80,
-        "imageUrl": "https://example.com/kaos-polos.jpg",
+        "imageUrl": "https://picsum.photos/seed/kaos/400/400",
         "category": "Pakaian"
     },
     {
@@ -36,7 +36,7 @@
         "description": "Celana jeans berkualitas tinggi.",
         "price": 150000,
         "stock": 50,
-        "imageUrl": "https://example.com/celana-jeans.jpg",
+        "imageUrl": "https://picsum.photos/seed/jeans/400/400",
         "category": "Pakaian"
     },
     {
@@ -44,7 +44,7 @@
         "description": "Laptop ASUS dengan spesifikasi tinggi.",
         "price": 12000000,
         "stock": 20,
-        "imageUrl": "https://example.com/laptop-asus.jpg",
+        "imageUrl": "https://picsum.photos/seed/laptop/400/400",
         "category": "Teknologi"
     },
     {
@@ -52,7 +52,7 @@
         "description": "Smartphone Samsung terbaru dengan fitur canggih.",
         "price": 9000000,
         "stock": 30,
-        "imageUrl": "https://example.com/smartphone-samsung.jpg",
+        "imageUrl": "https://picsum.photos/seed/samsung/400/400",
         "category": "Teknologi"
     },
     {
@@ -60,7 +60,7 @@
         "description": "Headphone JBL dengan suara berkualitas.",
         "price": 800000,
         "stock": 40,
-        "imageUrl": "https://example.com/headphone-jbl.jpg",
+        "imageUrl": "https://picsum.photos/seed/headphone/400/400",
         "category": "Teknologi"
     },
     {
@@ -68,7 +68,7 @@
         "description": "Kamera DSLR Canon untuk fotografi profesional.",
         "price": 12000000,
         "stock": 15,
-        "imageUrl": "https://example.com/kamera-canon.jpg",
+        "imageUrl": "https://picsum.photos/seed/camera/400/400",
         "category": "Teknologi"
     },
     {
@@ -76,7 +76,7 @@
         "description": "Set alat jahit lengkap untuk kerajinan.",
         "price": 60000,
         "stock": 100,
-        "imageUrl": "https://example.com/set-alat-jahit.jpg",
+        "imageUrl": "https://picsum.photos/seed/jahit/400/400",
         "category": "Alat Perkakas"
     },
     {
@@ -84,7 +84,7 @@
         "description": "Pakaian dalam wanita nyaman dan berkualitas.",
         "price": 50000,
         "stock": 120,
-        "imageUrl": "https://example.com/pakaian-dalam-wanita.jpg",
+        "imageUrl": "https://picsum.photos/seed/underwear/400/400",
         "category": "Pakaian"
     },
     {
@@ -92,7 +92,7 @@
         "description": "Jam tangan Casio dengan desain klasik.",
         "price": 300000,
         "stock": 70,
-        "imageUrl": "https://example.com/jam-tangan-casio.jpg",
+        "imageUrl": "https://picsum.photos/seed/watch/400/400",
         "category": "Teknologi"
     },
     {
@@ -100,7 +100,7 @@
         "description": "Koper travel dengan desain stylish.",
         "price": 400000,
         "stock": 50,
-        "imageUrl": "https://example.com/koper-travel.jpg",
+        "imageUrl": "https://picsum.photos/seed/luggage/400/400",
         "category": "Alat Perkakas"
     },
     {
@@ -108,7 +108,7 @@
         "description": "Sepatu sneakers nyaman untuk aktivitas sehari-hari.",
         "price": 250000,
         "stock": 90,
-        "imageUrl": "https://example.com/sepatu-sneakers.jpg",
+        "imageUrl": "https://picsum.photos/seed/sneakers/400/400",
         "category": "Pakaian"
     }
 ]
